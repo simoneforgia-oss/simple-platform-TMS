@@ -10,10 +10,11 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 //app.use(cors({ origin: '*' }));
-app.use(cors({
-  origin: ['http://localhost:3000', 'https://logistics-tms-frontend.vercel.app'],
+/*app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://logistics-tms-frontend.vercel.app'],
   credentials: true
-}));
+}));*/
+app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -35,6 +36,83 @@ pool.connect((err, client, release) => {
     release();
   }
 });
+
+//TABLE CREATION
+const initDB = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS orders (
+        id UUID PRIMARY KEY,
+        order_type VARCHAR(50),
+        sap_order_number VARCHAR(50) UNIQUE,
+        sap_document_date DATE,
+        customer_number VARCHAR(50),
+        vendor_number VARCHAR(50),
+        bp_name VARCHAR(100),
+        total_amount DECIMAL(10,2),
+        currency VARCHAR(10),
+        payment_terms VARCHAR(50),
+        delivery_date DATE,
+        plant VARCHAR(50),
+        shipping_point VARCHAR(50),
+        items JSONB,
+        status VARCHAR(50),
+        received_from_sap_at TIMESTAMP,
+        updated_at TIMESTAMP,
+        transport_id UUID,
+        delivery_number VARCHAR(50),
+        preinvoice_id UUID,
+        confirmed_at TIMESTAMP,
+        confirmed_by VARCHAR(50)
+      );
+
+      CREATE TABLE IF NOT EXISTS transports (
+        id UUID PRIMARY KEY,
+        sap_transport_number VARCHAR(50) UNIQUE,
+        transport_date DATE,
+        carrier VARCHAR(100),
+        vehicle_plate VARCHAR(50),
+        driver_name VARCHAR(100),
+        driver_phone VARCHAR(50),
+        status VARCHAR(50),
+        updated_at TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS preinvoices (
+        id UUID PRIMARY KEY,
+        invoice_number VARCHAR(50) UNIQUE,
+        order_id UUID,
+        billing_date DATE,
+        total_amount DECIMAL(10,2),
+        currency VARCHAR(10),
+        vat_amount DECIMAL(10,2),
+        net_amount DECIMAL(10,2),
+        payment_terms VARCHAR(50),
+        due_date DATE,
+        status VARCHAR(50),
+        items JSONB,
+        sent_to_sap_at TIMESTAMP,
+        sap_invoice_number VARCHAR(50)
+      );
+
+      CREATE TABLE IF NOT EXISTS order_confirmations (
+        id UUID PRIMARY KEY,
+        order_id UUID,
+        confirmation_date TIMESTAMP,
+        confirmed_items JSONB,
+        notes TEXT,
+        confirmed_by VARCHAR(50),
+        sent_to_sap_at TIMESTAMP,
+        sap_confirmation_number VARCHAR(50)
+      );
+    `);
+    console.log('✅ Tabelle del database verificate/create con successo');
+  } catch (err) {
+    console.error('❌ Errore creazione tabelle:', err.message);
+  }
+};
+
+initDB(); // Lanciamo la funzione all'avvio
 
 // ========================================
 // UTILITY FUNCTIONS
