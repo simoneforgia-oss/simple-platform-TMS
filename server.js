@@ -20,7 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 // PostgreSQL Pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: { rejectUnauthorized: false }, // <-- Cambia questa riga così!
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
