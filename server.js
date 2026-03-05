@@ -182,8 +182,43 @@ app.get('/health', async (req, res) => {
 // ========================================
 // IF1: RICEVI ORDINE DA SAP
 // ========================================
-
+// ========================================
+// IF1: RICEZIONE ORDINI DA SAP S/4HANA
+// ========================================
 app.post('/api/if1/receive-order', async (req, res) => {
+  try {
+    console.log("📥 IF1 - Payload ricevuto da SAP S/4HANA:", req.body);
+    
+    // Estraiamo i dati dal JSON ABAP
+    const { numero_ordine, cliente, prodotto, quantita, prezzo_unitario } = req.body;
+
+    // Controllo di sicurezza: se manca il numero ordine, lanciamo errore 400
+    if (!numero_ordine) {
+      return res.status(400).json({ error: "Dati non validi: numero_ordine mancante" });
+    }
+
+    // Prepariamo i dati per il Database
+    const orderId = uuidv4();
+    const totalAmount = quantita * prezzo_unitario;
+    const items = [{ prodotto, quantita, prezzo_unitario }];
+
+    // Salviamo nel DB
+    await pool.query(`
+      INSERT INTO orders (id, sap_order_number, bp_name, total_amount, currency, items, status, received_from_sap_at)
+      VALUES ($1, $2, $3, $4, 'EUR', $5, 'RECEIVED_FROM_SAP', CURRENT_TIMESTAMP)
+    `, [orderId, numero_ordine, cliente, totalAmount, JSON.stringify(items)]);
+
+    console.log(`✅ Ordine SAP ${numero_ordine} salvato con successo!`);
+    
+    // Rispondiamo al BTP con un 200 OK (tutto perfetto)
+    res.status(200).json({ success: true, message: "Ordine SAP salvato correttamente nel TMS" });
+    
+  } catch (err) {
+    console.error("❌ Errore IF1:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+/*app.post('/api/if1/receive-order', async (req, res) => {
   const client = await pool.connect();
   
   try {
@@ -261,7 +296,7 @@ app.post('/api/if1/receive-order', async (req, res) => {
   } finally {
     client.release();
   }
-});
+});*/
 
 // ========================================
 // IF2: RICEVI TRASPORTO DA SAP
