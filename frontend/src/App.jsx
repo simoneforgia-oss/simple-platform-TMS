@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import './App.css'
 
-const API_URL = 'https://simple-platform-tms-fb4-production.up.railway.app'
+const API_URL = 'https://simple-platform-tms-production.up.railway.app'
 
 function App() {
   const [ordini, setOrdini] = useState([])
