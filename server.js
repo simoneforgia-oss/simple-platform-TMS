@@ -11,6 +11,9 @@ app.use(cors({ origin: '*' })); // Permette a chiunque (Vite, BTP) di chiamare l
 //app.use(express.json()); // Permette di leggere i JSON in arrivo
 app.use(express.json({ type: '*/*' })); // Forza la lettura come JSON di QUALSIASI formato in arrivo
 
+app.use(express.json({ limit: '50mb', type: ['application/json', 'text/plain', '*/*'] }));
+app.use(express.text({ limit: '50mb', type: '*/*' }));
+
 // 2. Connessione al Database Railway
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -58,8 +61,26 @@ app.get('/api/orders', async (req, res) => {
 // [POST] IF1 - Ricevi nuovo ordine da SAP S/4HANA (via BTP)
 app.post('/api/if1/receive-order', async (req, res) => {
   try {
-    console.log("📥 Payload ricevuto da SAP:", req.body);
-    const { numero_ordine, cliente, prodotto, quantita, prezzo_unitario } = req.body;
+    console.log("=== 🚨 INIZIO CHIAMATA SAP 🚨 ===");
+    console.log("1. Tipo di dato ricevuto:", typeof req.body);
+    console.log("2. Contenuto Body:", req.body);
+    
+    // Cerchiamo di capire in che formato ci è arrivato il dato
+    let payload = req.body;
+    
+    // Se è arrivato come stringa di testo puro, forziamolo a diventare JSON
+    if (typeof payload === 'string' && payload.trim().startsWith('{')) {
+        payload = JSON.parse(payload);
+        console.log("3. Payload decodificato a forza:", payload);
+    }
+
+    // Se è vuoto, c'è un problema a monte
+    if (!payload || Object.keys(payload).length === 0) {
+        console.log("❌ ERRORE: Il payload è completamente vuoto!");
+        return res.status(400).json({ error: "Dati non ricevuti" });
+    }
+
+    const { numero_ordine, cliente, prodotto, quantita, prezzo_unitario } = payload;
 
     if (!numero_ordine) return res.status(400).json({ error: "numero_ordine mancante" });
 
@@ -75,6 +96,7 @@ app.post('/api/if1/receive-order', async (req, res) => {
     console.log(`✅ Ordine SAP ${numero_ordine} salvato nel DB!`);
     res.status(200).json({ success: true, message: "Ordine salvato nel TMS" });
   } catch (err) {
+    console.error("❌ Eccezione:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
