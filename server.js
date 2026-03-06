@@ -85,3 +85,11 @@ app.put('/api/orders/:id/confirm', async (req, res) => {
     res.json({ success: true, message: "Ordine confermato" });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+}); // <-- Ti mancavano queste parentesi!
+
+// 4. Avvio Server (E ti mancava questo pezzo!)
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`🚀 TMS Backend in ascolto sulla porta ${PORT}`);
+});   
