@@ -8,7 +8,8 @@ const app = express();
 
 // 1. Configurazioni base
 app.use(cors({ origin: '*' })); // Permette a chiunque (Vite, BTP) di chiamare le API
-app.use(express.json()); // Permette di leggere i JSON in arrivo
+//app.use(express.json()); // Permette di leggere i JSON in arrivo
+app.use(express.json({ type: '*/*' })); // Forza la lettura come JSON di QUALSIASI formato in arrivo
 
 // 2. Connessione al Database Railway
 const pool = new Pool({
