@@ -62,6 +62,7 @@ app.get('/api/orders', async (req, res) => {
 app.post('/api/if1/receive-order', async (req, res) => {
   try {
     console.log("=== 🚨 INIZIO CHIAMATA SAP 🚨 ===");
+    
     console.log("1. Tipo di dato ricevuto:", typeof req.body);
     console.log("2. Contenuto Body:", req.body);
     
