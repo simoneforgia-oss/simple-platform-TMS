@@ -18,6 +18,8 @@ const pool = new Pool({
 // 3. Inizializzazione Tabelle (Robusta)
 const initDB = async () => {
   try {
+    await pool.query('DROP TABLE IF EXISTS orders;');
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS orders (
         id UUID PRIMARY KEY,
